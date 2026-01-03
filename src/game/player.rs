@@ -93,8 +93,8 @@ commands.spawn((
             Flashlight,
             SpotLight {
                 color: Color::srgb(1.0, 0.96, 0.90),
-                intensity: 3500000.0,
-                range: 18.0,
+                intensity: 35000000.0,
+                range: 1800.0,
 
                 outer_angle: 20.0_f32.to_radians(),
                 inner_angle: 14.0_f32.to_radians(),

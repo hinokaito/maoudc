@@ -96,7 +96,7 @@ fn spawn_backrooms(
     let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset("room1.glb"));
     commands.spawn((
         SceneRoot(scene),
-        Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(1.0)),
+        Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(1.3, 2.0, 1.3)),
         SteamAudioMaterial::default(), // 音響ジオメトリ
         RigidBody::Static,
         ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
