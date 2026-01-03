@@ -38,6 +38,7 @@ fn setup_player(
 
 commands.spawn((
     Player,
+    FootstepSfxState::default(),
     Transform::from_xyz(0.0, 5.0, 0.0),
     RigidBody::Dynamic,
     Collider::capsule(0.5, 1.0),

@@ -31,3 +31,21 @@ impl Default for CameraSensitivity {
         Self(Vec2::new(0.003, 0.002))
     }
 }
+
+/// 足音の「距離」ベース再生用の状態
+#[derive(Component)]
+pub struct FootstepSfxState {
+    /// 今のフレームまでに歩いた距離（水平移動ぶん）
+    pub distance_accum: f32,
+    /// 左右の足を交互にする用（音の揺らぎに使う）
+    pub left: bool,
+}
+
+impl Default for FootstepSfxState {
+    fn default() -> Self {
+        Self {
+            distance_accum: 0.0,
+            left: false,
+        }
+    }
+}
