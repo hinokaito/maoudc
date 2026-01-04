@@ -61,7 +61,7 @@ impl Plugin for GamePlugin {
             // 機能別プラグイン
             .add_plugins(level::LevelPlugin)
             .add_plugins((
-                balls::BallsPlugin,
+                // balls::BallsPlugin,
                 rat::RatPlugin,
                 audio::AudioPlugin,
                 // vfx::VfxPlugin,

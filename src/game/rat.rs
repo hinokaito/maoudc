@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use avian3d::prelude::*;
 use crate::game::prelude::*;
 use rand::Rng;
-use crate::game::audio::Sfx;
 
 pub struct RatPlugin;
 

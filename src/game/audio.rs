@@ -7,7 +7,6 @@ use bevy_steam_audio::prelude::*;
 use avian3d::prelude::*;
 use bevy_tnua::prelude::*; 
 use bevy_tnua::TnuaRigidBodyTracker;
-use rand::Rng;
 
 use crate::game::prelude::*;
 
@@ -50,7 +49,7 @@ fn setup_rat_audio_settings(mut commands: Commands) {
         hear_dist: 38.0,        // 聞こえる距離
         stop_dist: 42.0,        // これ以上離れたら止める
         max_active: 12,         // 同時に鳴らす数
-        update_interval: 0.20,  // 更新頻度
+        _update_interval: 0.20,  // 更新頻度
     });
     commands.insert_resource(RatAudioTimer(Timer::from_seconds(
         0.15,
@@ -58,6 +57,8 @@ fn setup_rat_audio_settings(mut commands: Commands) {
     )));
 }
 
+
+// ネズミの足音 ======================================================
 fn play_rat_sfx(
     mut commands: Commands,
     time: Res<Time>,
@@ -149,7 +150,7 @@ fn play_rat_sfx(
 }
 
 
-// プレイヤー足音：
+// プレイヤー足音 =====================================================
 fn play_footsteps(
     mut commands: Commands,
     time: Res<Time>,
@@ -164,13 +165,6 @@ fn play_footsteps(
         With<Player>,
     >,
 ) {
-    // 調整パラメータ
-    const SPEED_MIN: f32 = 0.7; // これ未満は足音なし（微速・壁押し等をカット）
-    const STEP_DIST_MIN: f32 = 4.90; // 低速時の「1歩あたり距離」
-    const STEP_DIST_MAX: f32 = 6.45; // 高速時の「1歩あたり距離」
-    const VOL_MIN: f32 = 0.001;
-    const VOL_MAX: f32 = 0.0001;
-
     let dt = time.delta_secs();
 
     for (tf, tracker, controller, mut st) in &mut player_q {
@@ -237,6 +231,7 @@ fn play_footsteps(
     }
 }
 
+// ボールのバウンド音 ===================================================
 fn play_bounce_sfx(
     mut commands: Commands,
     time: Res<Time>,
@@ -252,11 +247,6 @@ fn play_bounce_sfx(
     is_ball: Query<(), With<Ball>>,
     mut ball_q: Query<(&GlobalTransform, &mut BounceSfxCooldown), With<Ball>>,
 ) {
-    const IMPULSE_MIN: f32 = 0.8;      // 小さい接触音は切る
-    const IMPULSE_MAX: f32 = 10.0;     // これ以上は最大音量扱い
-    const COOLDOWN: f32 = 0.04;        // 40ms
-    const MAX_PER_FRAME: usize = 8;    // 同時発音の上限（1000個対策）
-
     let now = time.elapsed_secs();
     let mut played = 0usize;
 
@@ -316,7 +306,6 @@ fn play_bounce_sfx(
                 ..Default::default()
             }],
         ));
-
 
         played += 1;
     }

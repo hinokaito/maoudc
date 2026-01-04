@@ -4,25 +4,25 @@ use std::f32::consts::TAU;
 use avian3d::prelude::*;
 use crate::game::prelude::*;
 
-pub struct BallsPlugin;
+pub struct _BallsPlugin;
 
-impl Plugin for BallsPlugin {
-    fn build(&self, app: &mut App) {
+impl Plugin for _BallsPlugin {
+    fn build(&self, _app: &mut App) {
         // app.add_systems(Startup, spawn_balls)
         //    .add_systems(FixedUpdate, spin_ball);
     }
 }
 
-fn spin_ball(
+fn _spin_ball(
     mut balls: Query<(&mut Transform, &Ball)>,
     timer: Res<Time>
 ) {
     for (mut transform, ball) in &mut balls {
-        transform.rotate_x(ball.speed * TAU * timer.delta_secs());
+        transform.rotate_x(ball._speed * TAU * timer.delta_secs());
     }
 }
 
-fn spawn_balls(
+fn _spawn_balls(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -32,7 +32,7 @@ fn spawn_balls(
 
     for _ in 0..10 {
         commands.spawn((
-            Ball { speed: 0.0 },
+            Ball { _speed: 0.0 },
             Mesh3d(mesh.clone()),
             MeshMaterial3d(mat.clone()),
 
@@ -58,7 +58,7 @@ fn spawn_balls(
         ));
     }
 }
-fn setup_lights(
+fn _setup_lights(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,

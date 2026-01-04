@@ -9,16 +9,16 @@ use bevy_hanabi::{ColorBlendMode, ColorBlendMask};
 
 /// VFX の EffectAsset ハンドル集
 #[derive(Resource, Clone)]
-pub struct VfxHandles {
+pub struct _VfxHandles {
     pub test: Handle<EffectAsset>,
     pub flame_core: Handle<EffectAsset>,
 }
 
-pub struct VfxPlugin;
+pub struct _VfxPlugin;
 
-impl Plugin for VfxPlugin {
+impl Plugin for _VfxPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup_vfx, spawn_default_vfx).chain());
+        app.add_systems(Startup, (_setup_vfx, _spawn_default_vfx).chain());
     }
 }
 
@@ -26,15 +26,15 @@ impl Plugin for VfxPlugin {
 // Setup / Spawn
 // -------------------------------------------------
 
-fn setup_vfx(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
-    let test = effects.add(test_vfx());
-    let flame_core = effects.add(fire_pillar());
+fn _setup_vfx(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
+    let test = effects.add(_test_vfx());
+    let flame_core = effects.add(_fire_pillar());
 
-    commands.insert_resource(VfxHandles { test, flame_core });
+    commands.insert_resource(_VfxHandles { test, flame_core });
 }
 
 /// デフォルトで 1個ずつ出す（不要ならこの system を外す）
-fn spawn_default_vfx(mut commands: Commands, vfx: Res<VfxHandles>) {
+fn _spawn_default_vfx(mut commands: Commands, vfx: Res<_VfxHandles>) {
     commands.spawn((
         Name::new("vfx_test"),
         ParticleEffect::new(vfx.test.clone()),
@@ -52,7 +52,7 @@ fn spawn_default_vfx(mut commands: Commands, vfx: Res<VfxHandles>) {
 // Effect assets
 // -------------------------------------------------
 
-fn test_vfx() -> EffectAsset {
+fn _test_vfx() -> EffectAsset {
     let mut module = Module::default();
 
     // 1. グラデーション（赤→透明）
@@ -98,7 +98,7 @@ fn test_vfx() -> EffectAsset {
     })
 }
 
-fn fire_pillar() -> EffectAsset {
+fn _fire_pillar() -> EffectAsset {
     // --- 色（HDR前提で強め）
     let mut color = HanabiGradient::new();
     color.add_key(0.0, Vec4::new(6.0, 6.0, 2.0, 1.0));

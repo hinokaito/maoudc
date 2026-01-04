@@ -54,10 +54,6 @@ fn update_interact_ui(
     }
 }
 
-const MAX_INTERACT_DIST: f32 = 10.0;
-// 20度以内を「向いてる」とする
-const MAX_ANGLE_DEG: f32 = 20.0;
-
 fn detect_focused_interactable(
     cam_q: Query<&GlobalTransform, With<PlayerCamera>>,
     interact_q: Query<(Entity, &GlobalTransform), With<Interactable>>,
