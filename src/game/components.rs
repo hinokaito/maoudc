@@ -3,8 +3,9 @@ use bevy_seedling::prelude::PoolLabel;
 
 // player.rs
 pub const EYE_HEIGHT: f32 = 1.6;
-pub const MOVE_SPEED: f32 = 10.0;
+pub const MOVE_SPEED: f32 = 11.0;
 pub const RESTITUTION: f32 = 1.0;
+pub const DRAW_DISTANCE: f32 = 1000.0;
 
 // audio.rs
 pub const SPEED_MIN: f32 = 0.7;      // これ未満は足音なし（微速・壁押し等をカット）

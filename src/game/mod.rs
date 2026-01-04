@@ -7,6 +7,7 @@ mod level;
 mod vfx;
 mod rat;
 mod ui;
+mod settings;
 
 use bevy::prelude::*;
 
@@ -27,6 +28,7 @@ impl Plugin for GamePlugin {
                 bevy_tnua_avian3d::prelude::TnuaAvian3dPlugin::new(bevy::prelude::FixedUpdate),
 
                 bevy_hanabi::prelude::HanabiPlugin,
+                bevy_egui::EguiPlugin::default(),
 
                 bevy_seedling::SeedlingPlugin::default(),
                 bevy_steam_audio::prelude::SteamAudioPlugin::default(),
@@ -67,6 +69,7 @@ impl Plugin for GamePlugin {
                 // vfx::VfxPlugin,
                 player::PlayerPlugin,
                 ui::UiPlugin,
+                settings::SettingsPlugin,
             ));
     }
 }
