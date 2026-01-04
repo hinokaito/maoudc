@@ -22,7 +22,7 @@ fn spawn_rat (
     
     let mesh: Handle<Mesh> = asset_server.load(
     GltfAssetLabel::Primitive { mesh: 0, primitive: 0 }
-        .from_asset("object/rat5.glb"),
+        .from_asset("object/rat.glb"),
     );
 
     let mat = materials.add(StandardMaterial {

@@ -26,6 +26,13 @@ pub struct Flashlight;
 pub struct Player;
 
 #[derive(Component)]
+pub struct PlayerCamera;
+
+#[derive(Component)]
+pub struct InteractPromptText;
+
+
+#[derive(Component)]
 pub struct Rat;
 
 #[derive(Component)]
@@ -88,3 +95,18 @@ impl Default for FootstepSfxState {
         }
     }
 }
+
+#[derive(Component)]
+pub struct Interactable {
+    pub prompt: String,
+}
+
+#[derive(Resource, Default)]
+pub struct FocusedInteractable(pub Option<Entity>);
+
+#[derive(Event)]
+pub struct InteractEvent {
+    pub actor: Entity,
+    pub target: Entity,
+}
+

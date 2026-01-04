@@ -62,6 +62,8 @@ commands.spawn((
     ))
     .with_children(|p| {
         p.spawn((
+            PlayerCamera,
+            IsDefaultUiCamera,
             Camera3d::default(), 
 
             SteamAudioListener, // 立体音響
@@ -179,7 +181,8 @@ fn apply_controls(
 
     let mut local = Vec3::ZERO;
     if keyboard.pressed(KeyCode::KeyW) {
-        local -= Vec3::Z;
+        // local -= Vec3::Z;
+        local -= Vec3::new(0.0, 0.0, 100.0);
     }
     if keyboard.pressed(KeyCode::KeyS) {
         local += Vec3::Z;
@@ -210,3 +213,4 @@ fn apply_controls(
         });
     }
 }
+

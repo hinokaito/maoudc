@@ -6,6 +6,7 @@ mod balls;
 mod level;
 mod vfx;
 mod rat;
+mod ui;
 
 use bevy::prelude::*;
 
@@ -65,6 +66,7 @@ impl Plugin for GamePlugin {
                 audio::AudioPlugin,
                 // vfx::VfxPlugin,
                 player::PlayerPlugin,
+                ui::UiPlugin,
             ));
     }
 }

@@ -5,6 +5,7 @@ use bevy_steam_audio::prelude::*;
 use bevy::gltf::GltfAssetLabel;
 use bevy_seedling::prelude::VolumeNode;
 use bevy_seedling::prelude::SamplePlayer;
+use rand::Rng;
 
 use crate::game::prelude::*;
 
@@ -18,6 +19,7 @@ impl Plugin for LevelPlugin {
             // setup_light, 
             // setup_level, 
             spawn_backrooms,
+            setup_objects,
         ));
     }
 }
@@ -120,6 +122,30 @@ fn spawn_backrooms(
             // SteamAudioPool
         ));
     });
+}
+
+fn setup_objects(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let mut rng = rand::rng();
+
+    let chair_scene: Handle<Scene> = asset_server.load(GltfAssetLabel::Scene(0).from_asset("object/chair.glb"));
+    let doll1_scene: Handle<Scene> = asset_server.load(GltfAssetLabel::Scene(0).from_asset("object/doll3.glb"));
+
+    commands.spawn((
+        SceneRoot(chair_scene.clone()),
+        Transform::from_xyz(rng.random_range(-1.0..1.0), -18.5, 500.0).with_scale(Vec3::splat(3.0)),
+        Visibility::default(),
+        RigidBody::Static,
+    ));
+
+    commands.spawn((
+        Interactable {
+            prompt: "E".to_string()
+        },
+        SceneRoot(doll1_scene.clone()),
+        Transform::from_xyz(rng.random_range(-1.0..1.0), -18.5, 10.0),
+        Visibility::default(),
+        RigidBody::Static,
+    ));
 }
 
 fn spawn_hollow_box(
