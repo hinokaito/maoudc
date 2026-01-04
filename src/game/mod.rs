@@ -5,6 +5,7 @@ mod audio;
 mod balls;
 mod level;
 mod vfx;
+mod rat;
 
 use bevy::prelude::*;
 
@@ -60,6 +61,7 @@ impl Plugin for GamePlugin {
             .add_plugins(level::LevelPlugin)
             .add_plugins((
                 balls::BallsPlugin,
+                rat::RatPlugin,
                 audio::AudioPlugin,
                 // vfx::VfxPlugin,
                 player::PlayerPlugin,

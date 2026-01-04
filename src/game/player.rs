@@ -94,12 +94,12 @@ commands.spawn((
             Flashlight,
             SpotLight {
                 color: Color::srgb(1.0, 0.96, 0.90),
-                intensity: 35000000.0,
+                intensity: 20_000_000.0,
                 range: 1800.0,
 
-                outer_angle: 20.0_f32.to_radians(),
-                inner_angle: 14.0_f32.to_radians(),
-                radius: 0.04,
+                outer_angle: 45.0_f32.to_radians(),
+                inner_angle: 5.0_f32.to_radians(),
+                radius: 0.05,
 
                 shadows_enabled: true,
                 shadow_map_near_z: 0.2,
@@ -107,18 +107,6 @@ commands.spawn((
                 ..default()
             },
             Transform::from_xyz(0.12, -0.12, -0.35),
-        ));
-        p.spawn((
-            Flashlight,
-            PointLight {
-                color: Color::srgb(1.0, 0.96, 0.90),
-                intensity: 35000.0,
-                range: 1800.0,
-                shadows_enabled: true,
-                shadow_map_near_z: 0.2,
-                
-                ..default()
-            },
         ));
     });
 });

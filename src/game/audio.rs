@@ -7,6 +7,7 @@ use bevy_steam_audio::prelude::*;
 use avian3d::prelude::*;
 use bevy_tnua::prelude::*; 
 use bevy_tnua::TnuaRigidBodyTracker;
+use rand::Rng;
 
 use crate::game::prelude::*;
 
@@ -14,23 +15,141 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, load_sfx)
+        app.add_systems(Startup, (load_sfx, setup_rat_audio_settings))
            .add_systems(Update, (
             play_bounce_sfx,
-            play_footsteps
+            play_footsteps,
+            play_rat_sfx, 
         ));
     }
 }
 
 #[derive(Resource)]
-struct Sfx {
-    bounce: Handle<AudioSample>,
-    footsteps: Vec<Handle<AudioSample>>,
+pub struct Sfx {
+    pub bounce: Handle<AudioSample>,
+    pub footsteps: Vec<Handle<AudioSample>>,
+    pub rat_footsteps: Vec<Handle<AudioSample>>,
 }
 
+fn load_sfx(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.insert_resource(Sfx {
+        bounce: assets.load("sfx/bounce.ogg"),
+        footsteps: vec![assets.load("sfx/footstep1.ogg")],
+        rat_footsteps: vec![
+            assets.load("sfx/rat/1.ogg"),
+            assets.load("sfx/rat/2.ogg"),
+            assets.load("sfx/rat/3.ogg"),
+            assets.load("sfx/rat/4.ogg"),
+            assets.load("sfx/rat/5.ogg"),
+        ],
+    });
+}
+
+fn setup_rat_audio_settings(mut commands: Commands) {
+    commands.insert_resource(RatAudioSettings {
+        hear_dist: 38.0,        // 聞こえる距離
+        stop_dist: 42.0,        // これ以上離れたら止める
+        max_active: 12,         // 同時に鳴らす数
+        update_interval: 0.20,  // 更新頻度
+    });
+    commands.insert_resource(RatAudioTimer(Timer::from_seconds(
+        0.15,
+        TimerMode::Repeating,
+    )));
+}
+
+fn play_rat_sfx(
+    mut commands: Commands,
+    time: Res<Time>,
+    sfx: Res<Sfx>,
+    settings: Res<RatAudioSettings>,
+    mut timer: ResMut<RatAudioTimer>,
+
+    // リスナー（=カメラ）位置
+    listener_q: Query<&GlobalTransform, With<SteamAudioListener>>,
+
+    // ラット
+    mut rats: Query<(Entity, &GlobalTransform, &mut RatFootstepAudio), With<Rat>>,
+) {
+    if sfx.rat_footsteps.is_empty() {
+        return;
+    }
+
+    // 更新間隔で間引き
+    timer.0.tick(time.delta());
+    if !timer.0.just_finished() {
+        return;
+    }
+
+    let listener_tf = match listener_q.single() {
+        Ok(t) => t,
+        Err(_) => return,
+    };
+    let listener_pos = listener_tf.translation();
+
+    let hear2 = settings.hear_dist * settings.hear_dist;
+    let stop2 = settings.stop_dist * settings.stop_dist;
+
+    // 近いラット候補を集める
+    let mut candidates: Vec<(f32, Entity)> = Vec::new();
+
+    for (e, tf, a) in rats.iter() {
+        let d2 = tf.translation().distance_squared(listener_pos);
+
+        // すでに鳴ってる個体は stop_dist まで粘らせる（ヒステリシス）
+        let in_range = if a.is_active { d2 <= stop2 } else { d2 <= hear2 };
+
+        if in_range {
+            candidates.push((d2, e));
+        }
+    }
+
+    // 近い順に並べて、上位 max_active のみ有効化
+    candidates.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut should_be_active = std::collections::HashSet::<Entity>::new();
+    for (_, e) in candidates.into_iter().take(settings.max_active) {
+        should_be_active.insert(e);
+    }
+
+    // 各ラットを on/off
+    for (e, _tf, mut a) in rats.iter_mut() {
+        let want = should_be_active.contains(&e);
+
+        if want && !a.is_active {
+            // --- ON: 子音源spawn
+            let sample = sfx.rat_footsteps[a.sample_index.min(sfx.rat_footsteps.len() - 1)].clone();
+
+            let child = commands
+                .spawn((
+                    Name::new("rat_footstep_loop"),
+                    Transform::default(),
+                    GlobalTransform::default(),
+                    SteamAudioPool,
+                    SamplePlayer::new(sample).looping(),
+                    // ループなので消えない想定。念のため preserve。
+                    SeedPlaybackSettings::default().preserve(),
+                    sample_effects![VolumeNode {
+                        volume: Volume::Linear(0.02),
+                        ..Default::default()
+                    }],
+                ))
+                .id();
+
+            commands.entity(e).add_child(child);
+            a.child_emitter = Some(child);
+            a.is_active = true;
+        } else if !want && a.is_active {
+            // --- OFF: 子音源despawn
+            if let Some(child) = a.child_emitter.take() {
+                commands.entity(child).despawn();
+            }
+            a.is_active = false;
+        }
+    }
+}
+
+
 // プレイヤー足音：
-// - 接地中（!is_airborne）
-// - 一定「距離」ごとに鳴らす（FPSに依存しにくい）
 fn play_footsteps(
     mut commands: Commands,
     time: Res<Time>,
@@ -49,8 +168,8 @@ fn play_footsteps(
     const SPEED_MIN: f32 = 0.7; // これ未満は足音なし（微速・壁押し等をカット）
     const STEP_DIST_MIN: f32 = 4.90; // 低速時の「1歩あたり距離」
     const STEP_DIST_MAX: f32 = 6.45; // 高速時の「1歩あたり距離」
-    const VOL_MIN: f32 = 0.04;
-    const VOL_MAX: f32 = 0.16;
+    const VOL_MIN: f32 = 0.001;
+    const VOL_MAX: f32 = 0.0001;
 
     let dt = time.delta_secs();
 
@@ -88,8 +207,10 @@ fn play_footsteps(
         let sample = sfx.footsteps[0].clone();
 
         // 音量：速度で補間 + 少し揺らす
-        let base_vol = VOL_MIN + (VOL_MAX - VOL_MIN) * speed01;
-        let volume = (base_vol * (0.92 + 0.16 * rand::random::<f32>())).clamp(0.0, 1.0);
+        // let base_vol = VOL_MIN + (VOL_MAX - VOL_MIN) * speed01;
+        // let volume = (base_vol * (0.92 + 0.16 * rand::random::<f32>())).clamp(0.0, 1.0);
+
+        let volume = VOL_MAX;
 
         // ピッチ：速度で少し上げる + 左右で微差 + ランダム微揺れ
         let lr = if st.left { -0.015 } else { 0.015 };
@@ -199,11 +320,4 @@ fn play_bounce_sfx(
 
         played += 1;
     }
-}
-
-fn load_sfx(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.insert_resource(Sfx {
-        bounce: assets.load("sfx/bounce.ogg"),
-        footsteps: vec![assets.load("sfx/footstep1.ogg")],
-    });
 }

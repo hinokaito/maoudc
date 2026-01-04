@@ -1,7 +1,10 @@
-use bevy::prelude::*;
+use bevy::{audio::Volume, prelude::*};
 use avian3d::prelude::*;
+use bevy_seedling::{pool::SamplerPool, sample_effects};
 use bevy_steam_audio::prelude::*;
 use bevy::gltf::GltfAssetLabel;
+use bevy_seedling::prelude::VolumeNode;
+use bevy_seedling::prelude::SamplePlayer;
 
 use crate::game::prelude::*;
 
@@ -14,7 +17,7 @@ impl Plugin for LevelPlugin {
             // setup_lights, 
             // setup_light, 
             // setup_level, 
-            spawn_backrooms
+            spawn_backrooms,
         ));
     }
 }
@@ -79,13 +82,13 @@ fn setup_level(
 
 fn spawn_floor(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
+    // mut meshes: ResMut<Assets<Mesh>>,
 ) {
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(1.0, 0.1, 1.0))),
-        Transform::from_xyz(0.0, -0.1, 0.0),
+        // Mesh3d(meshes.add(Cuboid::new(1000.0, 0.1, 1.0))),
+        Transform::from_xyz(0.0, -20.0, 0.0),
         RigidBody::Static,
-        Collider::cuboid(1.0, 0.1, 1.0),
+        Collider::cuboid(0.1, 0.1, 0.1),
     ));
 }
 
@@ -93,7 +96,7 @@ fn spawn_backrooms(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset("room1.glb"));
+    let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset("map/room1.glb"));
     commands.spawn((
         SceneRoot(scene),
         Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(1.3, 2.0, 1.3)),
@@ -102,7 +105,21 @@ fn spawn_backrooms(
         ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
         Friction::new(1.0),
         Restitution::new(RESTITUTION),
-    ));
+    ))
+    .with_children(|p| {
+        p.spawn((
+            SamplerPool(RoomSfxPool),
+            sample_effects![VolumeNode {
+                volume: bevy_seedling::prelude::Volume::Decibels(-16.0),
+                ..default()
+            }],
+        ));
+        p.spawn((
+            RoomSfxPool,
+            SamplePlayer::new(asset_server.load("sfx/room_tone.ogg")).looping(),
+            // SteamAudioPool
+        ));
+    });
 }
 
 fn spawn_hollow_box(
