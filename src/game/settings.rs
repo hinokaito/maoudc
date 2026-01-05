@@ -2,9 +2,8 @@ use bevy::prelude::*;
 use bevy::{
     anti_alias::{
         smaa::{Smaa, SmaaPreset},
-        fxaa::{Sensitivity, Fxaa},
+        fxaa::Fxaa,
         taa::TemporalAntiAliasing,
-        contrast_adaptive_sharpening::ContrastAdaptiveSharpening,
     },
     core_pipeline::{
         tonemapping::Tonemapping,
@@ -18,14 +17,13 @@ use bevy::{
         view::Hdr,
     },
     camera::{
-        MainPassResolutionOverride,
         Exposure,
         PhysicalCameraParameters
     }
 };
 
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::EguiPrimaryContextPass;
 
 use crate::game::prelude::*;
 
@@ -34,11 +32,16 @@ pub struct NeedsGraphicsApply;
 
 #[derive(Resource, Clone)]
 pub struct GraphicsSettings {
-    pub msaa: Msaa,
     pub hdr: bool,
+    pub msaa: Msaa,
+    pub exposure_mode: ExposureMode,
+    pub custom_ev100: f32,
+    pub custom_physical: PhysicalCameraParameters,
+    pub tonemapping: Tonemapping,
     pub bloom: bool,
     pub dof: bool,
     pub chromatic_aberration: f32,
+    pub distance_fog: bool,
     pub fov_deg: f32,
     pub draw_distance: f32,
     pub aa: AaMode,
@@ -55,17 +58,38 @@ pub enum AaMode {
 impl Default for GraphicsSettings {
     fn default() -> Self {
         Self {
-            msaa: Msaa::Sample4,
             hdr: true,
+            msaa: Msaa::Sample4,
+            exposure_mode: ExposureMode::CustomPhysical,
+            custom_ev100: Exposure::EV100_BLENDER,
+            custom_physical: PhysicalCameraParameters {
+                aperture_f_stops: 5.6,
+                shutter_speed_s: 0.033,
+                sensitivity_iso: 6400.0,
+                sensor_height: 0.0088,
+            },
+            tonemapping: Tonemapping::TonyMcMapface,
             bloom: true,
-            dof: true,
+            dof: false,
             chromatic_aberration: 0.03,
+            distance_fog: false,
             fov_deg: 70.0,
-            draw_distance: 300.0,
+            draw_distance: 10.0,
             aa: AaMode::None,
         }
     }
 }
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ExposureMode {
+    Sunlight,
+    Overcast,
+    Indoor,
+    Blender,
+    CustomEv100,
+    CustomPhysical,
+}
+
 
 pub struct SettingsPlugin;
 
@@ -94,7 +118,7 @@ pub fn apply_graphics_settings(
     // FOV / 描画距離（far）
     if let Projection::Perspective(ref mut p) = *projection {
         p.fov = settings.fov_deg.to_radians();
-        p.far = settings.draw_distance;
+        p.far = settings.draw_distance * 100.0;
     }
 
     let mut e = commands.entity(cam_e);
@@ -129,7 +153,35 @@ pub fn apply_graphics_settings(
         });
     }
 
-    // AAは「切り替え前に全部removeしてから、必要なのだけinsert」が事故りにくい
+    e.insert(settings.tonemapping);
+
+    let exposure = match settings.exposure_mode {
+        ExposureMode::Sunlight => Exposure::SUNLIGHT,
+        ExposureMode::Overcast => Exposure::OVERCAST,
+        ExposureMode::Indoor   => Exposure::INDOOR,
+        ExposureMode::Blender  => Exposure::BLENDER,
+        ExposureMode::CustomEv100 => Exposure { ev100: settings.custom_ev100 },
+        ExposureMode::CustomPhysical => Exposure::from_physical_camera(settings.custom_physical),
+    };
+    e.insert(exposure);
+
+    if settings.distance_fog {
+        e.insert(DistanceFog {
+            color: Color::srgb(0.7, 0.8, 0.9),
+            falloff: FogFalloff::Exponential { density: 0.02 },
+            ..default()
+        });
+    } else {
+        e.remove::<DistanceFog>();
+    }
+
+    let mut msaa = settings.msaa;
+    if matches!(settings.aa, AaMode::SmaaHigh) {
+        msaa = Msaa::Off;
+    }
+    e.insert(msaa);
+
+    // AAは切り替え前に全部removeしてから
     e.remove::<Fxaa>();
     e.remove::<Smaa>();
     e.remove::<TemporalAntiAliasing>();
@@ -162,8 +214,8 @@ pub fn graphics_menu_ui(
         ui.add(egui::Slider::new(&mut settings.chromatic_aberration, 0.0..=0.1)
             .text("Chromatic Aberration"));
 
-        ui.add(egui::Slider::new(&mut settings.fov_deg, 50.0..=100.0).text("FOV"));
-        ui.add(egui::Slider::new(&mut settings.draw_distance, 50.0..=1000.0).text("Draw Distance"));
+        ui.add(egui::Slider::new(&mut settings.fov_deg, 50.0..=110.0).text("FOV"));
+        ui.add(egui::Slider::new(&mut settings.draw_distance, 1.0..=10.0).text("Draw Distance"));
 
         egui::ComboBox::from_label("AA")
             .selected_text(format!("{:?}", settings.aa))
@@ -182,6 +234,59 @@ pub fn graphics_menu_ui(
             ui.selectable_value(&mut settings.msaa, Msaa::Sample4, "4x");
             ui.selectable_value(&mut settings.msaa, Msaa::Sample8, "8x");
         });
+
+        egui::ComboBox::from_label("Tonemapping")
+            .selected_text(format!("{:?}", settings.tonemapping))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::AcesFitted, "AcesFitted");
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::AgX, "AgX");
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::BlenderFilmic, "BlenderFilmic");
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::None, "None");
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::Reinhard, "Reinhard");
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::ReinhardLuminance, "ReinhardLuminance");
+                ui.selectable_value(
+                    &mut settings.tonemapping,
+                    Tonemapping::SomewhatBoringDisplayTransform,
+                    "SomewhatBoringDisplayTransform",
+                );
+                ui.selectable_value(&mut settings.tonemapping, Tonemapping::TonyMcMapface, "TonyMcMapface");
+            });
+
+        egui::ComboBox::from_label("Exposure")
+            .selected_text(format!("{:?}", settings.exposure_mode))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::Sunlight, "Sunlight");
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::Overcast, "Overcast");
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::Indoor, "Indoor");
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::Blender, "Blender");
+                ui.separator();
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::CustomEv100, "Custom (EV100)");
+                ui.selectable_value(&mut settings.exposure_mode, ExposureMode::CustomPhysical, "Custom (Physical)");
+            });
+
+        match settings.exposure_mode {
+            ExposureMode::CustomEv100 => {
+                ui.add(
+                    egui::Slider::new(&mut settings.custom_ev100, 0.0..=20.0)
+                        .text("EV100")
+                );
+            }
+            ExposureMode::CustomPhysical => {
+                ui.add(egui::Slider::new(&mut settings.custom_physical.aperture_f_stops, 1.0..=22.0).text("Aperture (f)"));
+                ui.add(
+                    egui::Slider::new(&mut settings.custom_physical.shutter_speed_s, 1.0/8000.0..=1.0)
+                        .logarithmic(true)
+                        .text("Shutter (s)")
+                );
+                ui.add(
+                    egui::Slider::new(&mut settings.custom_physical.sensitivity_iso, 50.0..=25600.0)
+                        .logarithmic(true)
+                        .text("ISO")
+                );
+                // sensor_height は固定運用なら表示しなくてOK
+            }
+            _ => {}
+        }
     });
 }
 

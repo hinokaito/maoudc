@@ -95,70 +95,6 @@ fn setup_player(
                 Camera3d::default(), 
                 SteamAudioListener, // 立体音響
 
-                // Hdr, 
-                
-            
-
-                // MainPassResolutionOverride(UVec2::new(96, 54)), // よくわからない
-
-                // Msaa::Sample4,
-                // Fxaa {
-                //     enabled: true,
-                //     edge_threshold: Sensitivity::Low,      // シャープ寄り
-                //     edge_threshold_min: Sensitivity::Low,  // 暗部の処理量を調整
-                // },
-                // Smaa { preset: SmaaPreset::High },
-
-                // Msaa::Off,
-                // TemporalAntiAliasing::default()
-                // TemporalAntiAliasing {
-                //     reset: true
-                // },
-                
-
-                // Msaa::Off,
-                // TemporalAntiAliasing::default(),
-                // ContrastAdaptiveSharpening {
-                //     enabled: true,
-                //     sharpening_strength: 0.6,
-                //     denoise: false,
-                // },
-
-                // DepthOfField {
-                //     mode: DepthOfFieldMode::Bokeh,
-                //     focal_distance: 3.0,     // ピント距離（m）
-                //     aperture_f_stops: 1.8,   // F値（小さいほどボケ強い）
-                //     ..default()
-                // },
-                
-                // Exposure::from_physical_camera(PhysicalCameraParameters {
-                //     aperture_f_stops: 7.1,
-                //     shutter_speed_s: 0.025,
-                //     sensitivity_iso: 3200.0,
-                //     sensor_height: 0.0156,
-                // }),
-
-                // Exposure::from_physical_camera(PhysicalCameraParameters {
-                //     aperture_f_stops: 5.6,
-                //     shutter_speed_s: 0.033,
-                //     sensitivity_iso: 6400.0,
-                //     sensor_height: 0.0088,
-                // }),
-
-                // Tonemapping::TonyMcMapface, 
-                // Bloom::NATURAL,
-
-                // ChromaticAberration {
-                //     intensity: 0.03,
-                //     max_samples: 8,
-                //     ..default()
-                // },
-
-                // DistanceFog {
-                //     color: Color::srgb_u8(43, 44, 47),
-                //     falloff: FogFalloff::Linear { start: 100.0, end: 180.0 },
-                //     ..default()
-                // },
                 Projection::Perspective(PerspectiveProjection {
                     fov: gfx.fov_deg.to_radians(),
                     far: gfx.draw_distance,
@@ -173,7 +109,7 @@ fn setup_player(
                 Visibility::Hidden,
                 SpotLight {
                     color: Color::srgb(1.0, 0.96, 0.90),
-                    intensity: 2_000_000.0,
+                    intensity: 2_0500_000.0,
                     range: 300.0,
 
                     outer_angle: 30.0_f32.to_radians(),
